@@ -2,14 +2,19 @@ module Data.MultiSet.Indexed where
 
 import Prelude
 import Data.Maybe (Maybe (..))
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple (..))
 import Data.Unfoldable (class Unfoldable)
 import Data.Foldable (class Foldable, foldMap, foldr, foldl)
+import Data.Array (foldr, sort) as Array
 import Data.IntMap (IntMap)
-import Data.IntMap (insert, union, empty, lookup, keys, delete, isEmpty) as IntMap
+import Data.IntMap (insert, union, empty, lookup, keys, delete, isEmpty, values) as IntMap
 import Data.Map (Map)
 import Data.Map (insertWith, lookup, empty, delete, insert, toUnfoldable) as Map
 import Data.Generic.Rep (class Generic)
+import Data.Argonaut (class EncodeJson, class DecodeJson, encodeJson, decodeJson)
+import Data.ArrayBuffer.Class
+  ( class DynamicByteLength, class EncodeArrayBuffer, class DecodeArrayBuffer
+  , byteLength, putArrayBuffer, readArrayBuffer)
 
 
 type Index = Int
@@ -39,6 +44,37 @@ instance foldableIxMultiSet :: Foldable (IxMultiSet k) where
   foldl f acc (IxMultiSet {mapping}) = foldl go acc mapping
     where
       go acc' valueMapping = foldl f acc' valueMapping
+instance encodeJsonIxMultiSet :: (EncodeJson k, EncodeJson a) => EncodeJson (IxMultiSet k a) where
+  encodeJson set =
+    let xs :: Array _
+        xs = toUnfoldable' set
+    in  encodeJson (map (\(Tuple key values) -> {key,values}) xs)
+instance decodeJsonIxMultiSet :: (DecodeJson k, DecodeJson a, Ord k) => DecodeJson (IxMultiSet k a) where
+  decodeJson json = do
+    (xs :: Array {key :: k, values :: Array a}) <- decodeJson json
+    let go {key,values} = Tuple key values
+    pure (fromFoldable (map go xs))
+instance dynamicByteLengthIxMultiSet :: (DynamicByteLength k, DynamicByteLength a) => DynamicByteLength (IxMultiSet k a) where
+  byteLength set =
+    let xs :: Array _
+        xs = toUnfoldable' set
+    in  byteLength xs
+instance encodeArrayBufferIxMultiSet :: (EncodeArrayBuffer k, EncodeArrayBuffer a) => EncodeArrayBuffer (IxMultiSet k a) where
+  putArrayBuffer b o set =
+    let xs :: Array _
+        xs = toUnfoldable' set
+    in  putArrayBuffer b o xs
+instance decodeArrayBufferIxMultiSet ::
+  ( DynamicByteLength k, DynamicByteLength a
+  , Ord k
+  , DecodeArrayBuffer k, DecodeArrayBuffer a) => DecodeArrayBuffer (IxMultiSet k a) where
+  readArrayBuffer b o = do
+    (mxs :: Maybe (Array _)) <- readArrayBuffer b o
+    case mxs of
+      Nothing -> pure Nothing
+      Just xs -> pure (Just (fromFoldable xs))
+
+
 
 empty :: forall k a. IxMultiSet k a
 empty = IxMultiSet
@@ -81,7 +117,7 @@ deleteAll key orig@(IxMultiSet {mapping,keyMapping,nextIndex}) = case Map.lookup
     let indicies = IntMap.keys valueMapping
     in  IxMultiSet
         { mapping: Map.delete key mapping
-        , keyMapping: foldr IntMap.delete keyMapping indicies
+        , keyMapping: Array.foldr IntMap.delete keyMapping indicies
         , nextIndex
         }
 
@@ -106,3 +142,25 @@ delete index orig@(IxMultiSet {mapping,keyMapping,nextIndex}) = case IntMap.look
 
 toUnfoldable :: forall k a f. Unfoldable f => IxMultiSet k a -> f (Tuple k (IntMap a))
 toUnfoldable (IxMultiSet {mapping}) = Map.toUnfoldable mapping
+
+toUnfoldable' :: forall k a f. Unfoldable f => Functor f => IxMultiSet k a -> f (Tuple k (Array a))
+toUnfoldable' set = map (\(Tuple key values) -> Tuple key (IntMap.values values)) (toUnfoldable set)
+
+fromFoldable :: forall k a f. Foldable f => Ord k => f (Tuple k (Array a)) -> IxMultiSet k a
+fromFoldable xs =
+    let go (Tuple key values) acc =
+          let go' v acc' =
+                let {set} = insert key v acc' -- ignore index
+                in  set
+          in  Array.foldr go' acc values
+    in  foldr go empty xs
+
+
+eqValues :: forall k a. Eq k => Ord a => IxMultiSet k a -> IxMultiSet k a -> Boolean
+eqValues set1 set2 =
+  let xs :: Array _
+      xs = map sortValues (toUnfoldable' set1)
+      ys :: Array _
+      ys = map sortValues (toUnfoldable' set2)
+      sortValues (Tuple k vs) = Tuple k (Array.sort vs)
+  in  xs == ys

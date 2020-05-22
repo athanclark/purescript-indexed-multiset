@@ -2,9 +2,11 @@
 Welcome to a Spago project!
 You can edit this file as you like.
 -}
-{ name = "purescript-aux-multiset"
+{ name = "purescript-indexed-multiset"
 , dependencies =
-  [ "foreign-object"
+  [ "argonaut"
+  , "arraybuffer-class"
+  , "foreign-object"
   , "generics-rep"
   , "ordered-collections"
   , "parseint"

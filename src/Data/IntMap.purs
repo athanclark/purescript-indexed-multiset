@@ -2,7 +2,7 @@ module Data.IntMap where
 
 import Prelude
 import Foreign.Object (Object)
-import Foreign.Object (insert, delete, lookup, toAscUnfoldable, empty, union, keys, isEmpty) as O
+import Foreign.Object (insert, delete, lookup, toAscUnfoldable, empty, union, keys, isEmpty, values) as O
 import Data.Maybe (Maybe, fromJust)
 import Data.Tuple (Tuple (..))
 import Data.Eq (class Eq1)
@@ -72,3 +72,6 @@ toUnfoldable :: forall f a. Unfoldable f => Functor f => IntMap a -> f (Tuple In
 toUnfoldable (IntMap xs) = map (\(Tuple k x) -> Tuple (getKey k) x) (O.toAscUnfoldable xs)
   where
     getKey k = unsafePartial (fromJust (parseInt k (toRadix 10)))
+
+values :: forall a. IntMap a -> Array a
+values (IntMap xs) = O.values xs
