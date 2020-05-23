@@ -9,7 +9,7 @@ import Data.Array (foldr, sort) as Array
 import Data.IntMap (IntMap)
 import Data.IntMap (insert, union, empty, lookup, keys, delete, isEmpty, values) as IntMap
 import Data.Map (Map)
-import Data.Map (insertWith, lookup, empty, delete, insert, toUnfoldable) as Map
+import Data.Map (insertWith, lookup, empty, delete, insert, toUnfoldable, fromFoldable) as Map
 import Data.Generic.Rep (class Generic)
 import Data.Argonaut (class EncodeJson, class DecodeJson, encodeJson, decodeJson)
 import Data.ArrayBuffer.Class
@@ -164,3 +164,13 @@ eqValues set1 set2 =
       ys = map sortValues (toUnfoldable' set2)
       sortValues (Tuple k vs) = Tuple k (Array.sort vs)
   in  xs == ys
+
+mapKeys :: forall k k' a. Ord k' => (k -> k') -> IxMultiSet k a -> IxMultiSet k' a
+mapKeys f (IxMultiSet {mapping,keyMapping,nextIndex}) = IxMultiSet
+  { mapping:
+    let xs :: Array _
+        xs = Map.toUnfoldable mapping
+    in  Map.fromFoldable (map (\(Tuple k vs) -> Tuple (f k) vs) xs)
+  , keyMapping: map f keyMapping
+  , nextIndex
+  }
