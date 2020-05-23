@@ -15,6 +15,7 @@ import Data.Argonaut (class EncodeJson, class DecodeJson, encodeJson, decodeJson
 import Data.ArrayBuffer.Class
   ( class DynamicByteLength, class EncodeArrayBuffer, class DecodeArrayBuffer
   , byteLength, putArrayBuffer, readArrayBuffer)
+import Test.QuickCheck (class Arbitrary, arbitrary)
 
 
 type Index = Int
@@ -73,6 +74,8 @@ instance decodeArrayBufferIxMultiSet ::
     case mxs of
       Nothing -> pure Nothing
       Just xs -> pure (Just (fromFoldable xs))
+instance arbitraryIxMultiSet :: (Arbitrary k, Arbitrary a, Ord k) => Arbitrary (IxMultiSet k a) where
+  arbitrary = fromFoldable <$> (arbitrary :: _ (Array _))
 
 
 
