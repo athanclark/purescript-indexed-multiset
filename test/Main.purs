@@ -3,7 +3,7 @@ module Test.Main where
 import Data.IntMap (IntMap)
 import Data.IntMap (empty, insert, lookup, delete, keys) as IntMap
 import Data.MultiSet.Indexed (IxMultiSet, Index)
-import Data.MultiSet.Indexed (insert, empty, lookup, delete, toUnfoldable, eqValues) as IxMultiSet
+import Data.MultiSet.Indexed (insert, empty, lookup, delete, toUnfoldable) as IxMultiSet
 
 import Prelude
 import Data.Maybe (Maybe (..))
@@ -123,7 +123,7 @@ jsonIsoIxMultiSet = do
   pure $ case decodeJson (encodeJson set) of
     Left e -> Failed $ "Json decoding failed: " <> e
     Right set'
-      | IxMultiSet.eqValues set' set -> Success
+      | set' == set -> Success
       | otherwise -> Failed $ "Sets not equal - original: " <> show set <> ", parsed: " <> show set'
 
 abIsoIxMultiSet :: Gen Result
@@ -134,7 +134,7 @@ abIsoIxMultiSet = do
   pure $ case mSet' of
     Nothing -> Failed "ArrayBuffer decoding failed"
     Just set'
-      | IxMultiSet.eqValues set' set -> Success
+      | set' == set -> Success
       | otherwise -> Failed $ "Sets not equal - original: " <> show set <> ", parsed: " <> show set'
 
 

@@ -26,7 +26,14 @@ newtype IxMultiSet k a = IxMultiSet
   , nextIndex  :: Index
   }
 derive instance genericIxMultiSet :: (Generic k k', Generic a a') => Generic (IxMultiSet k a) _
-derive newtype instance eqIxMultiSet :: (Eq k, Eq a) => Eq (IxMultiSet k a)
+instance eqIxMultiSet :: (Eq k, Ord a) => Eq (IxMultiSet k a) where
+  eq set1 set2 =
+    let xs :: Array _
+        xs = map sortValues (toUnfoldable' set1)
+        ys :: Array _
+        ys = map sortValues (toUnfoldable' set2)
+        sortValues (Tuple k vs) = Tuple k (Array.sort vs)
+    in  xs == ys
 derive newtype instance ordIxMultiSet :: (Ord k, Ord a) => Ord (IxMultiSet k a)
 instance showIxMultiSet :: (Show k, Show a) => Show (IxMultiSet k a) where
   show (IxMultiSet {mapping}) = show mapping
@@ -158,15 +165,6 @@ fromFoldable xs =
           in  Array.foldr go' acc values
     in  foldr go empty xs
 
-
-eqValues :: forall k a. Eq k => Ord a => IxMultiSet k a -> IxMultiSet k a -> Boolean
-eqValues set1 set2 =
-  let xs :: Array _
-      xs = map sortValues (toUnfoldable' set1)
-      ys :: Array _
-      ys = map sortValues (toUnfoldable' set2)
-      sortValues (Tuple k vs) = Tuple k (Array.sort vs)
-  in  xs == ys
 
 mapKeys :: forall k k' a. Ord k' => (k -> k') -> IxMultiSet k a -> IxMultiSet k' a
 mapKeys f (IxMultiSet {mapping,keyMapping,nextIndex}) = IxMultiSet
