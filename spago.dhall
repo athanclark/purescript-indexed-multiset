@@ -12,6 +12,7 @@ You can edit this file as you like.
   , "parseint"
   , "psci-support"
   , "quickcheck"
+  , "intmap"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

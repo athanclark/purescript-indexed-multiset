@@ -1,7 +1,6 @@
 module Test.Main where
 
 import Data.IntMap (IntMap)
-import Data.IntMap (empty, insert, lookup, delete, keys) as IntMap
 import Data.MultiSet.Indexed (IxMultiSet, Index)
 import Data.MultiSet.Indexed (insert, empty, lookup, delete, toUnfoldable) as IxMultiSet
 
@@ -9,7 +8,7 @@ import Prelude
 import Data.Maybe (Maybe (..))
 import Data.Tuple (Tuple (..), fst)
 import Data.Either (Either (..))
-import Data.Array (length, sort, nub, snoc, sortWith) as Array
+import Data.Array (snoc, sortWith) as Array
 import Data.Foldable (foldr)
 import Effect (Effect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -23,14 +22,6 @@ import Data.ArrayBuffer.Class.Types (Int32BE (..))
 
 main :: Effect Unit
 main = do
-  log "IntMap"
-  log " - insert exists"
-  quickCheckGen insertExistsIntMap
-  log " - delete doesn't exist"
-  quickCheckGen deleteDoesntExistIntMap
-  log " - sorted and deduped keys have same length"
-  quickCheckGen uniqueKeysIntMap
-  log ""
   log "IxMultiSet"
   log " - insert exists"
   quickCheckGen insertExistsIxMultiSet
@@ -43,42 +34,6 @@ main = do
   log " - arraybuffer iso"
   quickCheckGen abIsoIxMultiSet
 
-
-insertExistsIntMap :: Gen Result
-insertExistsIntMap = do
-  xs <- genIntMap
-  k <- arbitrary
-  a <- arbitrary
-  pure $ case IntMap.lookup k (IntMap.insert k a xs) of
-    Nothing -> Failed "Key doesn't exist"
-    Just a'
-      | a == a' -> Success
-      | otherwise -> Failed $ "Values don't match - inserted: " <> show a <> ", found: " <> show a'
-
-deleteDoesntExistIntMap :: Gen Result
-deleteDoesntExistIntMap = do
-  xs <- genIntMap
-  k <- arbitrary
-  a <- arbitrary
-  pure $ case IntMap.lookup k (IntMap.delete k (IntMap.insert k a xs)) of
-    Nothing -> Success
-    Just a' -> Failed $ "Found value after deletion - inserted: " <> show a <> ", found: " <> show a'
-
-
-uniqueKeysIntMap :: Gen Result
-uniqueKeysIntMap = do
-  xs <- genIntMap
-  let ks = IntMap.keys xs
-      ks' = Array.nub (Array.sort ks)
-  pure $ if Array.length ks' == Array.length ks
-          then Success
-          else Failed $ "Key lengths differ after sorting and deduping - original: " <> show ks <> ", sorted: " <> show ks'
-
-
-genIntMap :: Gen (IntMap Int)
-genIntMap = do
-  xs <- arrayOf (Tuple <$> arbitrary <*> arbitrary)
-  pure (foldr (\(Tuple k x) -> IntMap.insert k x) IntMap.empty xs)
 
 
 insertExistsIxMultiSet :: Gen Result

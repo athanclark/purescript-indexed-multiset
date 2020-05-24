@@ -123,6 +123,12 @@ let upstream =
 
 let overrides = {=}
 
-let additions = {=}
+let additions =
+  { intmap =
+    { dependencies = ["arraybuffer-class", "argonaut", "parseint"]
+    , repo = "https://github.com/openchronology/purescript-intmap.git"
+    , version = "master"
+    }
+  }
 
 in  upstream // overrides // additions
