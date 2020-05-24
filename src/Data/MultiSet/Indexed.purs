@@ -186,3 +186,6 @@ eqExact (IxMultiSet x) (IxMultiSet y) =
   x.mapping == y.mapping
   && x.keyMapping == y.keyMapping
   && x.nextIndex == y.nextIndex
+
+showExact :: forall k a. Show k => Show a => IxMultiSet k a -> String
+showExact (IxMultiSet {mapping}) = show mapping
