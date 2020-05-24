@@ -34,7 +34,9 @@ instance eqIxMultiSet :: (Eq k, Ord a) => Eq (IxMultiSet k a) where
         ys = map sortValues (toUnfoldable' set2)
         sortValues (Tuple k vs) = Tuple k (Array.sort vs)
     in  xs == ys
-derive newtype instance ordIxMultiSet :: (Ord k, Ord a) => Ord (IxMultiSet k a)
+instance ordIxMultiSet :: (Ord k, Ord a) => Ord (IxMultiSet k a) where
+  compare (IxMultiSet {mapping:x}) (IxMultiSet {mapping:y}) =
+    compare (map (Array.sort <<< IntMap.values) x) (map (Array.sort <<< IntMap.values) y)
 instance showIxMultiSet :: (Show k, Show a, Ord a) => Show (IxMultiSet k a) where
   show set =
     let xs :: Array _
