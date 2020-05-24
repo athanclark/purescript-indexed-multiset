@@ -175,3 +175,10 @@ mapKeys f (IxMultiSet {mapping,keyMapping,nextIndex}) = IxMultiSet
   , keyMapping: map f keyMapping
   , nextIndex
   }
+
+
+eqExact :: forall k a. Eq a => Eq k => IxMultiSet k a -> IxMultiSet k a -> Boolean
+eqExact (IxMultiSet x) (IxMultiSet y) =
+  x.mapping == y.mapping
+  && x.keyMapping == y.keyMapping
+  && x.nextIndex == y.nextIndex
